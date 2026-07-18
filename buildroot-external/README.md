@@ -110,6 +110,40 @@ cd ../buildroot && make
 
 Ergebnis: `../buildroot/output/images/sdcard.img`.
 
+## Bei Build-Abbruch fortsetzen
+
+`make` einfach erneut aufrufen — solange `output/` (bzw. der jeweilige
+`O=...`-Ordner) nicht gelöscht wurde, arbeitet Buildroot inkrementell über
+Stamp-Dateien weiter, kein Neustart von vorne. Vorher lohnt sich ein Blick,
+*warum* abgebrochen wurde (`dmesg | grep -i "killed process"` für OOM-Kills,
+sonst siehe GCC-14-Hinweis oben) — sonst läuft man direkt wieder in denselben
+Fehler.
+
+## Beide Boards parallel bauen (separates Output-Verzeichnis)
+
+Zero 2 W und Pi 2 B **nicht** im selben `buildroot/output/` nacheinander
+bauen — unterschiedliche CPU-Tuning-Flags (Cortex-A53 vs. Cortex-A7)
+invalidieren beim Umschalten quasi den kompletten Cross-Toolchain-Build und
+zerstören den bisherigen Fortschritt des anderen Boards. Stattdessen ein
+zweites, unabhängiges Output-Verzeichnis mit `O=` nutzen — der
+Quell-Download-Cache (`buildroot/dl/`, u. a. der Kernel-Tarball, der für
+beide Boards identisch ist) bleibt dabei automatisch gemeinsam genutzt:
+
+```bash
+cd ../buildroot
+make O=../output-pi2b BR2_EXTERNAL=../buildroot-external airplay_pi2b_defconfig
+make O=../output-pi2b menuconfig   # Root-Passwort setzen, siehe oben
+make O=../output-pi2b               # ggf. + HOSTCC=gcc-13 HOSTCXX=g++-13
+```
+
+Ergebnis: `../output-pi2b/images/sdcard.img` — unabhängig vom
+Zero-2-W-Image in `../buildroot/output/images/sdcard.img`.
+
+Wichtig: Ein separates `O=`-Verzeichnis teilt sich zwar die heruntergeladenen
+Quellen, **nicht** aber Host-Tools/Toolchain/Kernel/Zielpakete — die werden
+dort komplett neu kompiliert (kein inkrementeller Vorteil ggü. dem anderen
+Board, nur der Download-Anteil entfällt).
+
 ## Auf SD-Karte schreiben & erster Boot
 
 Siehe Phase 9/10 in `../buildroot-airplay-pi-zero2w.md` — `dd` bzw. Raspberry
@@ -120,6 +154,21 @@ Verifikation mit `aplay -l`, `dmesg | grep hifiberry`, `speaker-test`.
 Ohne angeschlossenen Amp4 lässt sich bereits Boot/WLAN/Ethernet/SSH/mDNS
 testen — `aplay -l` zeigt dann aber keine Karte, da der HiFiBerry-Codec
 (TAS5756) per I2C nicht antwortet.
+
+## Per SSH verbinden
+
+```bash
+ssh root@airplay.local        # Zero 2 W
+ssh root@airplay-pi2b.local   # Pi 2 B
+```
+
+Nutzt mDNS/Bonjour über `avahi` — funktioniert out of the box auf
+macOS/Linux, unter Windows braucht es eine Bonjour-Installation (z. B. über
+iTunes). Login mit `root` + dem gesetzten `BR2_TARGET_GENERIC_ROOT_PASSWD`.
+
+Falls `.local` nicht auflöst, IP-Adresse suchen (DHCP-Client-Liste des
+Routers, oder `nmap -sn <netzbereich>` / `avahi-browse -a`) und direkt per
+`ssh root@<ip>` verbinden.
 
 ## EQ-Kurve anpassen
 
