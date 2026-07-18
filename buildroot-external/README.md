@@ -155,6 +155,20 @@ Ohne angeschlossenen Amp4 lässt sich bereits Boot/WLAN/Ethernet/SSH/mDNS
 testen — `aplay -l` zeigt dann aber keine Karte, da der HiFiBerry-Codec
 (TAS5756) per I2C nicht antwortet.
 
+**`aplay -l` zeigt trotz Amp4 keine Karte** („no soundcards found"): Die
+nötigen Treiber sind im RPi-Kernel alle nur Module (`=m`), und Buildroots
+`mdev` lädt sie — anders als udev unter Raspberry Pi OS — nicht automatisch.
+Das Init-Script `S02modules` im rootfs-overlay lädt deshalb beim Boot die
+komplette Kette (`i2c-bcm2835`, `fixed`, `clk-hifiberry-dacpro`,
+`snd-soc-pcm512x-i2c`, `snd-soc-bcm2835-i2s`, `snd-soc-hifiberry-dacplus`).
+Fehlt eins davon, hängen die Treiber **stumm** in deferred probe (nichts in
+`dmesg`!) — diagnostizierbar über:
+
+```bash
+mount -t debugfs none /sys/kernel/debug
+cat /sys/kernel/debug/devices_deferred   # zeigt wartende Geräte + Grund
+```
+
 ## Per SSH verbinden
 
 ```bash

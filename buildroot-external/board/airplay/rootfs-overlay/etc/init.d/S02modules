@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Laedt die Kernel-Modul-Kette fuer den HiFiBerry Amp4 (alle =m im
+# bcm2709-Kernel-Defconfig). Buildroots mdev macht kein automatisches
+# modalias-Laden wie udev unter Raspberry Pi OS - ohne dieses Script bleibt
+# aplay -l leer ("no soundcards found"), obwohl Overlay und Device Tree
+# korrekt sind: pcm512x wartet dann still per deferred probe auf Regulator
+# (fixed) und Clock, der Machine-Treiber auf den I2S-Controller.
+#
+# Reihenfolge der modprobes ist unkritisch, deferred probe loest die
+# Abhaengigkeiten auf, sobald alle Module geladen sind.
+#
+case "$1" in
+    start)
+        printf "Loading HiFiBerry sound modules: "
+        modprobe i2c-bcm2835
+        modprobe fixed
+        modprobe clk-hifiberry-dacpro
+        modprobe snd-soc-pcm512x-i2c
+        modprobe snd-soc-bcm2835-i2s
+        modprobe snd-soc-hifiberry-dacplus
+        echo "OK"
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+exit 0
