@@ -4,3 +4,4 @@ buildroot-build.log
 
 # Echte WLAN-Zugangsdaten - niemals committen
 buildroot-external/board/airplay/rootfs-overlay/etc/wpa_supplicant.conf
+buildroot-external/board/airplay-pi2b/rootfs-overlay/etc/wpa_supplicant.conf

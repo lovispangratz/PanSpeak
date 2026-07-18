@@ -1,0 +1,20 @@
+auto lo
+iface lo inet loopback
+
+# Ethernet - immer aktiv, per DHCP. Funktioniert ohne weitere Config,
+# sobald ein Kabel steckt.
+auto eth0
+iface eth0 inet dhcp
+
+# Optionaler USB-WLAN-Stick - wird automatisch erkannt, sofern ein von
+# rtl8xxxu (z.B. Realtek RTL8188CUS/RTL8192CU) oder rt2800usb (z.B. Ralink/
+# MediaTek RT2870/RT3070/RT5370) unterstützter Chipsatz benutzt wird - beide
+# Treiber + Firmware sind im Image enthalten, das Kernel-Hotplugging (mdev)
+# lädt das passende Modul automatisch beim Einstecken.
+#
+# Ohne Stick eingesteckt schlägt "ifup wlan0" beim Boot einfach fehl
+# (kein Interface vorhanden) und Ethernet läuft normal weiter.
+auto wlan0
+iface wlan0 inet dhcp
+    pre-up wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant.conf -D nl80211
+    post-down killall -q wpa_supplicant

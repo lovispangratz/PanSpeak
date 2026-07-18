@@ -1,0 +1,34 @@
+# Please note that this is only a sample, we recommend you to change it to fit
+# your needs.
+# You should override this file using BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE.
+# See http://buildroot.org/manual.html#rootfs-custom
+# and http://elinux.org/RPiconfig for a description of config.txt syntax
+
+start_file=start.elf
+fixup_file=fixup.dat
+
+kernel=zImage
+
+# To use an external initramfs file
+#initramfs rootfs.cpio.gz
+
+# Disable overscan assuming the display supports displaying the full resolution
+# If the text shown on the screen disappears off the edge, comment this out
+disable_overscan=1
+
+# How much memory in MB to assign to the GPU on Pi models having
+# 256, 512 or 1024 MB total memory
+gpu_mem_256=100
+gpu_mem_512=100
+gpu_mem_1024=100
+
+# --- HiFiBerry Amp4 ---
+# Internes BCM-Audio deaktivieren:
+dtparam=audio=off
+# HiFiBerry-Treiber laden (Amp4 / Amp2):
+dtoverlay=hifiberry-dacplus-std
+
+# --- Debug-Konsole über UART (optional, sehr empfehlenswert beim ersten Boot) ---
+# Der Pi 2B hat kein Bluetooth, das UART0 ist also standardmäßig frei -
+# anders als beim Zero 2 W braucht es hier keinen miniuart-bt-Overlay-Trick.
+enable_uart=1
