@@ -184,10 +184,39 @@ Falls `.local` nicht auflöst, IP-Adresse suchen (DHCP-Client-Liste des
 Routers, oder `nmap -sn <netzbereich>` / `avahi-browse -a`) und direkt per
 `ssh root@<ip>` verbinden.
 
-## EQ-Kurve anpassen
+## Lautstärke: fester Hardware-Deckel + Software-Volume
 
-`board/<airplay|airplay-pi2b>/rootfs-overlay/etc/asound.conf`, Zeile
-`controls [ ... ]` in `pcm.equal_fixed` — zehn dB-Werte für 31 Hz…16 kHz.
-Danach neu bauen und Image neu flashen (oder Datei manuell auf die laufende
-SD-Karte kopieren und `shairport-sync` per
-`/etc/init.d/S99shairport-sync restart` neu starten).
+`S99shairport-sync` setzt beim Boot den Hardware-Regler `Digital` des
+TAS5756 fest auf **−6 dB**. In `shairport-sync.conf` ist bewusst **kein**
+`mixer_control_name` gesetzt — shairport regelt die AirPlay-Lautstärke rein
+in Software *unterhalb* dieses Deckels. Volle iPhone-Lautstärke kann damit
+nie lauter werden als der gesetzte Wert (Schutz der Lautsprecher).
+
+Deckel ändern: dB-Wert in `S99shairport-sync` anpassen (`amixer -c 0 sset
+Digital -- -6dB`). Achtung: Der Regler arbeitet logarithmisch über eine
+Spanne von −103,5…0 dB — Prozentangaben in `amixer` täuschen (20 % ≈ −83 dB
+≈ unhörbar), immer direkt in dB setzen. Ohne den Init-Eintrag startet der
+Treiber mit 0 dB (Vollgas).
+
+## Software-EQ: derzeit deaktiviert (Bypass)
+
+Die statische EQ-Variante aus Anhang B (`caps`/Eq10 über alsa-libs
+`type ladspa`-Plugin) ist mit alsa-lib 1.2.x **defekt**: Die
+hw-Parameter-Aushandlung über der LADSPA-Schicht bricht mit
+`Assertion !snd_interval_empty(i) failed` ab (auf echter Hardware
+verifiziert; auch mit `policy duplicate`, unabhängig vom Player — aplay wie
+speaker-test). Zusätzliche Stolperfalle dabei: `plughw:0,0` ist selbst schon
+ein plug-Wrapper — ab drei verschachtelten plug-Schichten scheitert die
+Aushandlung ebenfalls, daher verweisen die PCMs in `asound.conf` direkt auf
+`hw:0,0`.
+
+Die Audiokette läuft deshalb aktuell im Bypass (`shairport-sync → plug →
+hw:0,0`). Kandidaten für eine spätere EQ-Lösung:
+
+1. `type ladspa` mit expliziten Kanal-Bindings (zwei Eq10-Instanzen, je
+   Kanal fest verdrahtet) statt `policy duplicate` — ungetestet.
+2. shairport-syncs eingebauter **Convolution-Filter** (FIR über
+   Impulsantwort-Datei, `BR2_PACKAGE_SHAIRPORT_SYNC_CONVOLUTION`) — kann
+   beliebige EQ-Kurven abbilden und ist gepflegter Code; braucht einen
+   Rebuild und ein Werkzeug zum Erzeugen der Impulsantwort aus der
+   Wunschkurve.

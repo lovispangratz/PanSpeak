@@ -8,6 +8,10 @@ CONF=/etc/shairport-sync.conf
 
 case "$1" in
     start)
+        # Hardware-Lautstaerke-Deckel (Schutz der Lautsprecher): der Treiber
+        # startet sonst mit 0dB Vollgas. shairport-sync regelt in Software
+        # unterhalb dieses Werts (kein mixer_control_name gesetzt).
+        amixer -c 0 sset Digital -- -6dB >/dev/null 2>&1
         printf "Starting shairport-sync: "
         start-stop-daemon -S -b -m -p "$PIDFILE" \
             -x "$DAEMON" -- -c "$CONF"
