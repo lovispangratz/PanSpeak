@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Startet shairport-sync nach dbus (S30) und avahi (S50).
+#
+DAEMON=/usr/bin/shairport-sync
+PIDFILE=/var/run/shairport-sync.pid
+CONF=/etc/shairport-sync.conf
+
+case "$1" in
+    start)
+        printf "Starting shairport-sync: "
+        start-stop-daemon -S -b -m -p "$PIDFILE" \
+            -x "$DAEMON" -- -c "$CONF"
+        echo "OK"
+        ;;
+    stop)
+        printf "Stopping shairport-sync: "
+        start-stop-daemon -K -q -p "$PIDFILE"
+        echo "OK"
+        ;;
+    restart|reload)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+exit 0

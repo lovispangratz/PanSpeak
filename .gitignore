@@ -1,0 +1,6 @@
+# Buildroot-Arbeitskopie (wird per build.sh geklont, ~GB-groß, nicht versionieren)
+/buildroot/
+buildroot-build.log
+
+# Echte WLAN-Zugangsdaten - niemals committen
+buildroot-external/board/airplay/rootfs-overlay/etc/wpa_supplicant.conf

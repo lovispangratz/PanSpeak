@@ -1,0 +1,3 @@
+# Keine eigenen Kconfig-Symbole nötig - dieser BR2_EXTERNAL-Tree stellt nur
+# board/airplay (rootfs-overlay + config.txt) und configs/airplay_defconfig
+# bereit.
