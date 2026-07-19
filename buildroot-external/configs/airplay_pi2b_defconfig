@@ -17,9 +17,9 @@ BR2_LINUX_KERNEL_DTS_SUPPORT=y
 BR2_LINUX_KERNEL_INTREE_DTS_NAME="broadcom/bcm2709-rpi-2-b broadcom/bcm2710-rpi-2-b"
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
 BR2_LINUX_KERNEL_DTB_OVERLAY_SUPPORT=y
-# Edimax N150 (RTL8188EU) - von rtl8xxxu/rt2800usb nicht abgedeckt,
-# siehe 4.6 weiter unten und board/airplay-pi2b/linux-r8188eu.fragment
-BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_AIRPLAY_PATH)/board/airplay-pi2b/linux-r8188eu.fragment"
+# USB-WLAN: schaltet RTL8XXXU_UNTESTED frei (u.a. Edimax N150 V1),
+# siehe 4.6 weiter unten und board/airplay-pi2b/linux-usb-wifi.fragment
+BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_AIRPLAY_PATH)/board/airplay-pi2b/linux-usb-wifi.fragment"
 BR2_PACKAGE_BUSYBOX_SHOW_OTHERS=y
 BR2_PACKAGE_XZ=y
 BR2_PACKAGE_RPI_FIRMWARE=y
@@ -76,15 +76,15 @@ BR2_PACKAGE_CAPS=y
 # Der Pi 2B hat keinen eingebauten WLAN-Chip. rtl8xxxu und rt2800usb sind im
 # bcm2709-Kernel-Defconfig bereits als Module aktiv (CONFIG_RTL8XXXU=m,
 # CONFIG_RT2800USB=m) - hier nur noch wpa_supplicant + die passende Firmware.
-# Edimax N150 (RTL8188EU) wird von keinem der beiden abgedeckt - Treiber
-# kommt per Kernel-Config-Fragment (siehe oben, CONFIG_R8188EU), Firmware
-# rtl8188eufw.bin steckt bereits in RTL_81XX mit drin.
+# rtl8xxxu deckt auch den Edimax N150 ab (RTL8188EU seit Kernel 6.3;
+# RTL8188CUS-Variante braucht RTL8XXXU_UNTESTED aus dem Fragment oben),
+# Firmware fuer beide steckt in RTL_81XX.
 BR2_PACKAGE_WPA_SUPPLICANT=y
 BR2_PACKAGE_WPA_SUPPLICANT_NL80211=y
 BR2_PACKAGE_WPA_SUPPLICANT_CLI=y
 BR2_PACKAGE_WPA_SUPPLICANT_PASSPHRASE=y
 BR2_PACKAGE_LINUX_FIRMWARE=y
-# Realtek RTL8188CUS/RTL8192CU/RTL8188EU (rtl8xxxu- und r8188eu-Treiber)
+# Realtek RTL8188CUS/RTL8192CU/RTL8188EU (rtl8xxxu-Treiber)
 BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX=y
 # Ralink/MediaTek RT2870/RT3070/RT5370 (rt2800usb-Treiber)
 BR2_PACKAGE_LINUX_FIRMWARE_RALINK_RT2XX=y

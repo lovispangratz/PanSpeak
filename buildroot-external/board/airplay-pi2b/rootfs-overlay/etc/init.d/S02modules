@@ -8,8 +8,9 @@
 # (fixed) und Clock, der Machine-Treiber auf den I2S-Controller.
 #
 # Aus demselben Grund wird auch der Treiber fuer den USB-WLAN-Stick
-# (Edimax N150, RTL8188EU) explizit geladen - ohne Stick ist das harmlos
-# (Modul laedt und bindet einfach nichts).
+# (rtl8xxxu, deckt u.a. Edimax N150 ab - der alte Staging-Treiber r8188eu
+# existiert seit Kernel 6.3 nicht mehr) explizit geladen - ohne Stick ist
+# das harmlos (Modul laedt und bindet einfach nichts).
 #
 # Reihenfolge der modprobes ist unkritisch, deferred probe loest die
 # Abhaengigkeiten auf, sobald alle Module geladen sind.
@@ -24,8 +25,8 @@ case "$1" in
         modprobe snd-soc-bcm2835-i2s
         modprobe snd-soc-hifiberry-dacplus
         echo "OK"
-        printf "Loading USB wifi module (r8188eu): "
-        modprobe r8188eu
+        printf "Loading USB wifi module (rtl8xxxu): "
+        modprobe rtl8xxxu
         echo "OK"
         ;;
     stop)

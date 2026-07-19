@@ -1,0 +1,8 @@
+# USB-WLAN-Sticks (z.B. Edimax N150 / EW-7811Un): rtl8xxxu ist im
+# bcm2709-Defconfig bereits =m und deckt seit Kernel 6.3 auch RTL8188EU ab
+# (der fruehere Staging-Treiber r8188eu wurde dorthin ueberfuehrt und
+# existiert nicht mehr). Einige Geraete-IDs - darunter der Edimax N150 V1
+# (RTL8188CUS, 7392:7811) - sind aber hinter RTL8XXXU_UNTESTED versteckt;
+# der V2 (RTL8188EU, 7392:b811) steht in der Haupttabelle. Diese Option
+# schaltet nur zusaetzliche IDs im ohnehin gebauten Treiber frei.
+CONFIG_RTL8XXXU_UNTESTED=y

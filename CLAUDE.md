@@ -99,14 +99,20 @@ Kritische Regeln dabei:
    bzw. „installs executables without proper RPATH") — nach einem `mv`:
    `.config` sichern, Rest wegwerfen, neu bauen (`BR2_EXTERNAL` beim ersten
    make wieder mitgeben, `.br2-external.mk` ist dann weg).
-9. **Edimax N150 (RTL8188EU)** wird von `rtl8xxxu` nicht abgedeckt
-   (`modprobe: FATAL: Module r8188eu not found`). Fix: Staging-Treiber
-   `CONFIG_R8188EU=m` via Kernel-Config-Fragment
-   `board/airplay-pi2b/linux-r8188eu.fragment`
-   (`BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES` in der Defconfig); Firmware
-   `rtl8188eufw.bin` ist in `BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX` bereits
-   enthalten. Geladen wird das Modul per `S02modules` (siehe Lektion 1 —
-   ohne Stick harmlos). Stand: gebaut, auf Hardware noch ungetestet.
+9. **Edimax N150: `modprobe r8188eu` schlägt fehl, weil es den
+   Staging-Treiber seit Kernel 6.3 nicht mehr gibt** — RTL8188EU-Support
+   ist in `rtl8xxxu` gewandert (bereits `=m` im bcm2709-Defconfig).
+   Achtung doppelt: (a) Netz-Anleitungen mit r8188eu sind für ≥6.3 alle
+   veraltet; (b) das Kernel-Fragment-Merge (`merge_config.sh`) verwirft
+   unbekannte Symbole **stillschweigend** — nach jedem Fragment-Build im
+   fertigen `.config` gegenprüfen! Einige Geräte-IDs (u. a. Edimax N150 V1,
+   RTL8188CUS `7392:7811`) sind hinter `RTL8XXXU_UNTESTED` versteckt → das
+   schaltet `board/airplay-pi2b/linux-usb-wifi.fragment` frei
+   (`BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES`); der V2 (RTL8188EU
+   `7392:b811`) steht in der Haupttabelle. Firmware beider Varianten ist in
+   `BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX` enthalten. Geladen wird `rtl8xxxu`
+   per `S02modules` (siehe Lektion 1 — ohne Stick harmlos). Stand: gebaut,
+   auf Hardware noch ungetestet.
 
 ## Arbeitsweise mit diesem Nutzer
 
@@ -127,8 +133,8 @@ Kritische Regeln dabei:
 
 ## Offene Punkte
 
-- Edimax N150 / r8188eu (Lektion 9) auf echter Hardware testen:
-  `ip link` sollte `wlan0` zeigen, `dmesg` den Firmware-Load.
+- Edimax N150 / rtl8xxxu (Lektion 9) auf echter Hardware testen:
+  `ip link` sollte `wlan0` zeigen, `dmesg` Geräte-Erkennung + Firmware-Load.
 - Software-EQ (siehe Lektion 2) — Convolution-Ansatz ist der vielversprechendste.
 - Zero-2-W-Image auf echter Hardware verifizieren (S02modules & Co. sind
   bereits in dessen Overlay übernommen).

@@ -39,29 +39,34 @@ angeschlossen ist:
 
 | Chipsatz | Treiber | Herkunft |
 |---|---|---|
-| **Realtek RTL8188EU** (z. B. Edimax N150 / EW-7811Un) | `r8188eu` (Staging) | Kernel-Config-Fragment, siehe unten |
-| Realtek RTL8188CUS/RTL8192CU | `rtl8xxxu` | bereits `=m` im bcm2709-Defconfig |
+| Realtek RTL8188EU (z. B. **Edimax N150 / EW-7811Un V2**, `7392:b811`) | `rtl8xxxu` | bereits `=m` im bcm2709-Defconfig |
+| Realtek RTL8188CUS/RTL8192CU (z. B. **Edimax N150 V1**, `7392:7811`) | `rtl8xxxu` | Geräte-ID z. T. erst mit `RTL8XXXU_UNTESTED` (Fragment, siehe unten) |
 | Ralink/MediaTek RT2870/RT3070/RT5370 | `rt2800usb` | bereits `=m` im bcm2709-Defconfig |
 
-Der **RTL8188EU** (Edimax N150) wird von `rtl8xxxu` *nicht* abgedeckt und ist
-im bcm2709-Kernel-Defconfig nicht aktiviert — Fehlerbild:
-`modprobe: FATAL: Module r8188eu not found`. Deshalb aktiviert das
-Kernel-Config-Fragment `board/airplay-pi2b/linux-r8188eu.fragment`
-(eingebunden über `BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES` in
-`airplay_pi2b_defconfig`) den Staging-Treiber `CONFIG_R8188EU=m`. Die
-zugehörige Firmware `rtlwifi/rtl8188eufw.bin` steckt bereits im ohnehin
-ausgewählten `BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX` — dort ist nichts weiter
-nötig.
+**Achtung, veraltete Anleitungen im Netz:** Für den Edimax N150 kursiert
+überall `modprobe r8188eu` — diesen Staging-Treiber gibt es **seit Kernel
+6.3 nicht mehr** (Fehlerbild: `modprobe: FATAL: Module r8188eu not found`).
+Seine RTL8188EU-Unterstützung ist in den regulären `rtl8xxxu`-Treiber
+gewandert, der hier ohnehin als Modul im Image steckt.
 
-Geladen wird `r8188eu` beim Boot explizit durch `S02modules` (Buildroots
+Einige Geräte-IDs — darunter der Edimax N150 **V1** (RTL8188CUS,
+`7392:7811`) — sind in `rtl8xxxu` allerdings hinter der Kconfig-Option
+`RTL8XXXU_UNTESTED` versteckt. Das Kernel-Config-Fragment
+`board/airplay-pi2b/linux-usb-wifi.fragment` (eingebunden über
+`BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES` in `airplay_pi2b_defconfig`)
+schaltet sie frei. Firmware für beide Edimax-Varianten
+(`rtlwifi/rtl8188eufw.bin` bzw. `rtlwifi/rtl8192cufw_*.bin`) steckt bereits
+im ohnehin ausgewählten `BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX`.
+
+Geladen wird `rtl8xxxu` beim Boot explizit durch `S02modules` (Buildroots
 `mdev` macht kein verlässliches modalias-Autoload, siehe den
 `aplay -l`-Abschnitt unten — dasselbe Problem wie bei den Audio-Treibern).
-Für die anderen beiden Chipsatz-Familien bei Bedarf analog einen
-`modprobe`-Eintrag in `S02modules` ergänzen. Schnelltest auf dem Gerät:
+Für `rt2800usb`-Sticks bei Bedarf analog einen `modprobe`-Eintrag in
+`S02modules` ergänzen. Schnelltest auf dem Gerät:
 
 ```bash
-modprobe r8188eu && ip link   # wlan0 sollte auftauchen
-dmesg | tail                  # Firmware-Load + Treiber-Meldungen
+modprobe rtl8xxxu && ip link   # wlan0 sollte auftauchen
+dmesg | tail                   # Geräte-Erkennung + Firmware-Load
 ```
 
 **WLAN-Passwort später über SSH (via Ethernet) ändern:** funktioniert
