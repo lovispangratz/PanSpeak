@@ -6,11 +6,12 @@ iface lo inet loopback
 auto eth0
 iface eth0 inet dhcp
 
-# Optionaler USB-WLAN-Stick - wird automatisch erkannt, sofern ein von
-# rtl8xxxu (z.B. Realtek RTL8188CUS/RTL8192CU) oder rt2800usb (z.B. Ralink/
-# MediaTek RT2870/RT3070/RT5370) unterstützter Chipsatz benutzt wird - beide
-# Treiber + Firmware sind im Image enthalten, das Kernel-Hotplugging (mdev)
-# lädt das passende Modul automatisch beim Einstecken.
+# Optionaler USB-WLAN-Stick. Im Image enthaltene Treiber + Firmware:
+# r8188eu (Edimax N150 / Realtek RTL8188EU - wird von S02modules beim Boot
+# explizit geladen, mdev macht kein zuverlässiges modalias-Autoload),
+# rtl8xxxu (z.B. Realtek RTL8188CUS/RTL8192CU) und rt2800usb (z.B. Ralink/
+# MediaTek RT2870/RT3070/RT5370) - letztere ggf. manuell per modprobe laden
+# bzw. in S02modules ergänzen.
 #
 # Ohne Stick eingesteckt schlägt "ifup wlan0" beim Boot einfach fehl
 # (kein Interface vorhanden) und Ethernet läuft normal weiter.
