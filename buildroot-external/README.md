@@ -30,12 +30,39 @@ konfiguriert deshalb **beide** Wege gleichzeitig, automatisch je nachdem was
 angeschlossen ist:
 
 - **Ethernet** (`eth0`) läuft immer per DHCP, ohne jede Konfiguration.
-- **USB-WLAN-Stick** (`wlan0`) wird automatisch erkannt, wenn der Chipsatz von
-  `rtl8xxxu` (z. B. Realtek RTL8188CUS/RTL8192CU) oder `rt2800usb` (z. B.
-  Ralink/MediaTek RT2870/RT3070/RT5370) unterstützt wird — beide Treiber
-  stecken bereits als Kernel-Module im pinned RPi-Kernel-Defconfig, Firmware
-  ist mit eingebaut. Ohne Stick eingesteckt scheitert `ifup wlan0` beim Boot
-  einfach lautlos, Ethernet läuft unabhängig davon normal weiter.
+- **USB-WLAN-Stick** (`wlan0`): Treiber + Firmware für drei Chipsatz-Familien
+  sind im Image enthalten (siehe unten). Ohne Stick eingesteckt scheitert
+  `ifup wlan0` beim Boot einfach lautlos, Ethernet läuft unabhängig davon
+  normal weiter.
+
+### Unterstützte USB-WLAN-Chipsätze
+
+| Chipsatz | Treiber | Herkunft |
+|---|---|---|
+| **Realtek RTL8188EU** (z. B. Edimax N150 / EW-7811Un) | `r8188eu` (Staging) | Kernel-Config-Fragment, siehe unten |
+| Realtek RTL8188CUS/RTL8192CU | `rtl8xxxu` | bereits `=m` im bcm2709-Defconfig |
+| Ralink/MediaTek RT2870/RT3070/RT5370 | `rt2800usb` | bereits `=m` im bcm2709-Defconfig |
+
+Der **RTL8188EU** (Edimax N150) wird von `rtl8xxxu` *nicht* abgedeckt und ist
+im bcm2709-Kernel-Defconfig nicht aktiviert — Fehlerbild:
+`modprobe: FATAL: Module r8188eu not found`. Deshalb aktiviert das
+Kernel-Config-Fragment `board/airplay-pi2b/linux-r8188eu.fragment`
+(eingebunden über `BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES` in
+`airplay_pi2b_defconfig`) den Staging-Treiber `CONFIG_R8188EU=m`. Die
+zugehörige Firmware `rtlwifi/rtl8188eufw.bin` steckt bereits im ohnehin
+ausgewählten `BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX` — dort ist nichts weiter
+nötig.
+
+Geladen wird `r8188eu` beim Boot explizit durch `S02modules` (Buildroots
+`mdev` macht kein verlässliches modalias-Autoload, siehe den
+`aplay -l`-Abschnitt unten — dasselbe Problem wie bei den Audio-Treibern).
+Für die anderen beiden Chipsatz-Familien bei Bedarf analog einen
+`modprobe`-Eintrag in `S02modules` ergänzen. Schnelltest auf dem Gerät:
+
+```bash
+modprobe r8188eu && ip link   # wlan0 sollte auftauchen
+dmesg | tail                  # Firmware-Load + Treiber-Meldungen
+```
 
 **WLAN-Passwort später über SSH (via Ethernet) ändern:** funktioniert
 problemlos, weil das Root-Dateisystem ein normales beschreibbares ext4 ist
@@ -63,6 +90,16 @@ sudo apt install -y build-essential git bc bison flex libssl-dev \
 ~10 GB freier Plattenplatz. Mit mehr CPU-Kernen geht's deutlich schneller als
 die in der Anleitung veranschlagten 30–90 Minuten (Buildroot nutzt automatisch
 alle Kerne, `BR2_JLEVEL=0`).
+
+**Drei Stolperfallen rund um Verzeichnisse** (Details und Fehlerbilder in der
+[Repo-README](../README.md)):
+
+1. Kein **Leerzeichen** irgendwo im Pfad zu Repo oder Build-Verzeichnissen —
+   Buildroots make bricht damit sofort ab.
+2. Build-Verzeichnisse (`buildroot/`, `output-pi2b/`) auf ein **natives
+   Dateisystem** legen, nicht auf eine VM-Freigabe (virtiofs o. ä.).
+3. Build-Verzeichnisse **niemals nachträglich verschieben** — absolute Pfade
+   sind in die Host-Tools eingebacken.
 
 **GCC 14+ auf dem Build-Host** (z. B. neuere Ubuntu-Versionen): `host-m4`
 1.4.19 (gebündelt in Buildroot 2025.02) schlägt mit GCC 14 fehl

@@ -20,7 +20,10 @@ in zwei Board-Varianten:
   Phase 4.5 (alsaequal) und Anhang B (LADSPA-EQ) sind so nicht umsetzbar,
   siehe „Gelernte Lektionen".
 - `setup-vps.sh` — provisioniert einen frischen Ubuntu-Build-Host komplett
-  (Wegwerf-VPS-Workflow; der Nutzer baut auf einem VPS, nicht lokal).
+  (Wegwerf-VPS-Workflow). Inzwischen baut der Nutzer alternativ in einer
+  lokalen VM, deren Repo auf einer virtiofs-Freigabe liegt — dann liegen die
+  Build-Verzeichnisse **außerhalb** des Repos nativ in der VM (aktuell
+  `/root/build/{buildroot,output-pi2b}`), siehe Lektion 8.
 - `buildroot/` und `output-pi2b/` sind gitignored (Build-Arbeitsverzeichnisse).
 
 ## Build-Workflow (Kurzform)
@@ -44,6 +47,8 @@ Kritische Regeln dabei:
 - Overlay-Änderungen (Configs/Init-Scripte) brauchen nur ein erneutes `make`
   — dauert Sekunden (target-finalize läuft immer, nichts wird kompiliert).
 - Nach Abbruch einfach `make` erneut — Stamp-Dateien machen es inkrementell.
+- Pfade: kein Leerzeichen, kein virtiofs für Build-Verzeichnisse, Output nie
+  verschieben — Details in Lektion 8 und der Repo-README.
 
 ## Gelernte Lektionen (echte Hardware-Fehlersuche, Pi 2B)
 
@@ -81,6 +86,27 @@ Kritische Regeln dabei:
 7. Erster Boot: Amp4 braucht eigene 12–20V-Versorgung (speist auch den Pi).
    Ohne Amp4 testbar: Boot/Netz/SSH/mDNS — aber keine Soundkarte (I2C).
    Flashen: Raspberry Pi Imager → „Use custom" → `sdcard.img`.
+8. **Build-Host-Verzeichnisse (VM-Setup, Juli 2026):** Drei Fallen in einer
+   Session gefunden: (a) **Leerzeichen im Pfad** → Buildroots make bricht
+   sofort ab (`make[1]: *** /pfad/bis/leerzeichen: No such file or
+   directory`); Symlink hilft nicht, make löst physisch auf — Ordner auf dem
+   Host umbenennen. (b) **virtiofs-Freigaben taugen nicht als
+   Build-Verzeichnis**: generierte Skripte verlieren das Exec-Bit
+   (`host/bin/pkg-config: Permission denied`) — `buildroot/` + `output-*/`
+   nativ ablegen (`/root/build/`), nur das Repo darf auf der Freigabe
+   liegen. (c) **Output-Verzeichnisse sind nicht verschiebbar** (RPATH/
+   `--prefix` absolut eingebacken; Fehlerbild `libpkgconf.so.5: cannot open`
+   bzw. „installs executables without proper RPATH") — nach einem `mv`:
+   `.config` sichern, Rest wegwerfen, neu bauen (`BR2_EXTERNAL` beim ersten
+   make wieder mitgeben, `.br2-external.mk` ist dann weg).
+9. **Edimax N150 (RTL8188EU)** wird von `rtl8xxxu` nicht abgedeckt
+   (`modprobe: FATAL: Module r8188eu not found`). Fix: Staging-Treiber
+   `CONFIG_R8188EU=m` via Kernel-Config-Fragment
+   `board/airplay-pi2b/linux-r8188eu.fragment`
+   (`BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES` in der Defconfig); Firmware
+   `rtl8188eufw.bin` ist in `BR2_PACKAGE_LINUX_FIRMWARE_RTL_81XX` bereits
+   enthalten. Geladen wird das Modul per `S02modules` (siehe Lektion 1 —
+   ohne Stick harmlos). Stand: gebaut, auf Hardware noch ungetestet.
 
 ## Arbeitsweise mit diesem Nutzer
 
@@ -91,12 +117,18 @@ Kritische Regeln dabei:
   Nischen-Repos explizit abgelehnt — deshalb kein alsaequal).
 - Secrets (WLAN-PSK, Root-Passwort) nie ins Repo — Platzhalter + gitignore;
   der Nutzer trägt echte Werte selbst ein.
-- Der Nutzer baut auf einem Wegwerf-VPS (root), testet auf echter Hardware
-  und pastet Terminal-Ausgaben hierher — Debug-Anweisungen als kurze,
-  kopierbare Befehlsblöcke formulieren.
+- Der Nutzer baut als root auf einem Wegwerf-VPS oder einer lokalen VM
+  (Repo auf virtiofs-Freigabe, Build-Verzeichnisse nativ — Lektion 8),
+  testet auf echter Hardware und pastet Terminal-Ausgaben hierher —
+  Debug-Anweisungen als kurze, kopierbare Befehlsblöcke formulieren.
+- Beim Inspizieren von `.config`-Dateien aufpassen: dort steht das echte
+  Root-Passwort im Klartext (`BR2_TARGET_GENERIC_ROOT_PASSWD`) — nie breit
+  grep-en/catten, nur gezielt die benötigte Variable.
 
 ## Offene Punkte
 
+- Edimax N150 / r8188eu (Lektion 9) auf echter Hardware testen:
+  `ip link` sollte `wlan0` zeigen, `dmesg` den Firmware-Load.
 - Software-EQ (siehe Lektion 2) — Convolution-Ansatz ist der vielversprechendste.
 - Zero-2-W-Image auf echter Hardware verifizieren (S02modules & Co. sind
   bereits in dessen Overlay übernommen).
