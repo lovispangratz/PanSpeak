@@ -1,0 +1,4 @@
+# Edimax N150 (Realtek RTL8188EU) - im bcm2709-Defconfig nicht aktiv,
+# rtl8xxxu deckt diesen Chip nicht ab. In-tree Staging-Treiber.
+CONFIG_STAGING=y
+CONFIG_R8188EU=m
